@@ -114,3 +114,14 @@ button:hover {
     color: #856404;
     border: 1px solid #ffeeba;
 }
+
+.keystream-display {
+    margin-top: 10px;
+    padding: 8px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 14px;
+    word-break: break-all;
+}

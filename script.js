@@ -152,6 +152,7 @@ const messageDiv = document.getElementById('message');
 const showMatrixCheckbox = document.getElementById('show-matrix');
 const showVigenereTableCheckbox = document.getElementById('show-vigenere-table');
 const matrixView = document.getElementById('matrix-view');
+const vigenereKeystreamDiv = document.getElementById('vigenere-keystream');
 
 function getCurrentAlgorithm() {
     for (const radio of algorithmRadios) if (radio.checked) return radio.value;
@@ -232,6 +233,9 @@ function process(mode) {
     const rawKey = keyInput.value.trim();
     const rawText = inputText.value;
 
+    
+    vigenereKeystreamDiv.textContent = '';
+
     if (!rawKey) {
         messageDiv.textContent = 'Ключ не может быть пустым';
         messageDiv.className = 'error';
@@ -245,7 +249,7 @@ function process(mode) {
         return;
     }
 
-    // We filter the key and text depending on the algorithm
+    // Filtering the key and text
     let filteredKey, filteredText;
     let keyFiltered = false, textFiltered = false;
 
@@ -261,7 +265,6 @@ function process(mode) {
         textFiltered = filteredText.length !== rawText.length;
     }
 
-    // Checking that characters remain after filtering
     if (!filteredKey) {
         messageDiv.textContent = algorithm === 'columnar' 
             ? 'Ключ не содержит английских букв' 
@@ -279,15 +282,15 @@ function process(mode) {
         return;
     }
 
-    // Show a warning if characters were dropped
+    
     if (keyFiltered || textFiltered) {
         let parts = [];
         if (keyFiltered) parts.push('ключе');
         if (textFiltered) parts.push('тексте');
-        messageDiv.textContent = `Внимание: в ${parts.join(' и ')} обнаружены недопустимые символы (пробелы, цифры, знаки и т.п.). Они были проигнорированы.`;
+        messageDiv.textContent = `Внимание: в ${parts.join(' и ')} обнаружены недопустимые символы. Они были проигнорированы.`;
         messageDiv.className = 'warning';
     } else {
-        messageDiv.textContent = ''; 
+        messageDiv.textContent = '';
     }
 
     try {
@@ -302,18 +305,23 @@ function process(mode) {
             result = res.result;
             matrixData = res.matrixData;
             displayColumnarMatrix(matrixData);
+            vigenereKeystreamDiv.textContent = '';
         } else {
             const res = mode === 'encrypt' 
                 ? vigenereEncrypt(filteredText, filteredKey) 
                 : vigenereDecrypt(filteredText, filteredKey);
             result = res.result;
             keyStream = res.keyStream;
+            // Display the progressive key in a separate field
+            if (keyStream.length) {
+                vigenereKeystreamDiv.textContent = 'Прогрессивный ключ: ' + keyStream.join('');
+            }
             displayVigenereTable(filteredText, keyStream, result);
         }
 
         outputText.value = result;
 
-        // If there were no warnings, show success
+        // If there were no warnings, we show success
         if (!keyFiltered && !textFiltered) {
             messageDiv.textContent = 'Операция выполнена успешно';
             messageDiv.className = 'info';
@@ -322,6 +330,7 @@ function process(mode) {
         messageDiv.textContent = 'Ошибка: ' + e.message;
         messageDiv.className = 'error';
         matrixView.innerHTML = '';
+        vigenereKeystreamDiv.textContent = '';
     }
 }
 
@@ -364,7 +373,10 @@ downloadBtn.addEventListener('click', () => {
 });
 
 for (const radio of algorithmRadios) {
-    radio.addEventListener('change', () => matrixView.innerHTML = '');
+    radio.addEventListener('change', () => {
+        matrixView.innerHTML = '';
+        vigenereKeystreamDiv.textContent = '';
+    });
 }
 
 // Clear buttons 
@@ -377,6 +389,7 @@ if (clearKeyBtn) {
         messageDiv.textContent = '';
         messageDiv.className = '';
         matrixView.innerHTML = '';
+        vigenereKeystreamDiv.textContent = '';
     });
 }
 if (clearTextBtn) {
@@ -385,5 +398,6 @@ if (clearTextBtn) {
         messageDiv.textContent = '';
         messageDiv.className = '';
         matrixView.innerHTML = '';
+        vigenereKeystreamDiv.textContent = '';
     });
 }
