@@ -108,3 +108,9 @@ button:hover {
     margin: 5px 0;
     color: #555;
 }
+
+#message.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}

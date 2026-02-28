@@ -1,8 +1,8 @@
-// Константы алфавитов
+// Alphabet constants
 const ENGLISH_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const RUSSIAN_ALPHABET = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
 
-// Фильтрация (используется внутри алгоритмов для гарантии, но теперь входные данные уже чистые)
+// Filtration
 function filterEnglish(text) {
     return text.toUpperCase().split('').filter(ch => ENGLISH_ALPHABET.includes(ch)).join('');
 }
@@ -10,9 +10,9 @@ function filterRussian(text) {
     return text.toUpperCase().split('').filter(ch => RUSSIAN_ALPHABET.includes(ch)).join('');
 }
 
-// Столбцовый метод
+// Columnar method
 function columnarEncrypt(plain, key) {
-    const cleanPlain = filterEnglish(plain); 
+    const cleanPlain = filterEnglish(plain);
     if (!cleanPlain) return { result: '', matrixData: null };
     const cols = key.length;
     const rows = Math.ceil(cleanPlain.length / cols);
@@ -49,10 +49,8 @@ function columnarDecrypt(cipher, key) {
     if (!cleanCipher) return { result: '', matrixData: null };
     const cols = key.length;
     const total = cleanCipher.length;
-    const baseRows = Math.floor(total / cols); // минимальное количество строк в столбце
-    const remainder = total % cols; // сколько столбцов имеют на одну строку больше
-
-    // Длины столбцов в исходном порядке (по индексам столбцов)
+    const baseRows = Math.floor(total / cols);
+    const remainder = total % cols;
     const colLengths = Array(cols).fill(baseRows);
     for (let i = 0; i < remainder; i++) {
         colLengths[i] = baseRows + 1;
@@ -60,14 +58,12 @@ function columnarDecrypt(cipher, key) {
 
     const keyUpper = key.toUpperCase().split('');
     const indices = Array.from({ length: cols }, (_, i) => i);
-    // Сортируем индексы по ключу, получаем порядок считывания столбцов при шифровании
     indices.sort((a, b) => {
         if (keyUpper[a] < keyUpper[b]) return -1;
         if (keyUpper[a] > keyUpper[b]) return 1;
         return a - b;
     });
 
-    // Распределяем символы шифртекста по столбцам в порядке indices
     const columns = Array.from({ length: cols }, () => []);
     let pos = 0;
     for (const colIdx of indices) {
@@ -76,10 +72,7 @@ function columnarDecrypt(cipher, key) {
         pos += len;
     }
 
-    // Общее количество строк в таблице
     const totalRows = baseRows + (remainder > 0 ? 1 : 0);
-
-    // Собираем текст по строкам в исходном порядке столбцов 
     let plain = '';
     for (let r = 0; r < totalRows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -88,14 +81,13 @@ function columnarDecrypt(cipher, key) {
             }
         }
     }
-
     return {
         result: plain,
         matrixData: { type: 'decrypt', key: keyUpper, sortedIndices: indices, columns, rows: totalRows, cols, colLengths }
     };
 }
 
-// Виженер с прогрессивным ключом
+// Vigenère with progressive key
 function vigenereEncrypt(plain, key) {
     const cleanPlain = filterRussian(plain);
     if (!cleanPlain) return { result: '', keyStream: [] };
@@ -146,7 +138,7 @@ function vigenereDecrypt(cipher, key) {
     return { result: plain, keyStream };
 }
 
-// Элементы интерфейса
+// Interface elements
 const algorithmRadios = document.getElementsByName('algorithm');
 const keyInput = document.getElementById('key');
 const inputText = document.getElementById('input-text');
@@ -166,33 +158,7 @@ function getCurrentAlgorithm() {
     return 'columnar';
 }
 
-// Проверка ключа: только буквы соответствующего алфавита
-function validateKey(algorithm, key) {
-    if (!key) return 'Ключ не может быть пустым';
-    const upperKey = key.toUpperCase();
-    const alphabet = algorithm === 'columnar' ? ENGLISH_ALPHABET : RUSSIAN_ALPHABET;
-    for (let ch of upperKey) {
-        if (!alphabet.includes(ch)) {
-            return `Ключ содержит недопустимые символы. Разрешены только ${algorithm === 'columnar' ? 'английские' : 'русские'} буквы.`;
-        }
-    }
-    return null;
-}
-
-// Проверка текста: только буквы соответствующего алфавита
-function validateText(algorithm, text) {
-    if (!text) return null; 
-    const upperText = text.toUpperCase();
-    const alphabet = algorithm === 'columnar' ? ENGLISH_ALPHABET : RUSSIAN_ALPHABET;
-    for (let ch of upperText) {
-        if (!alphabet.includes(ch)) {
-            return `Текст содержит недопустимые символы. Разрешены только ${algorithm === 'columnar' ? 'английские' : 'русские'} буквы.`;
-        }
-    }
-    return null;
-}
-
-// Отображение матрицы для столбцового метода
+// Matrix display for column method
 function displayColumnarMatrix(matrixData) {
     if (!matrixData || !showMatrixCheckbox.checked) {
         matrixView.innerHTML = '';
@@ -239,7 +205,7 @@ function displayColumnarMatrix(matrixData) {
     matrixView.innerHTML = html;
 }
 
-// Отображение таблицы для Виженера
+// Table display for Vigenere
 function displayVigenereTable(plainText, keyStream, cipherText) {
     if (!showVigenereTableCheckbox.checked) {
         matrixView.innerHTML = '';
@@ -249,102 +215,109 @@ function displayVigenereTable(plainText, keyStream, cipherText) {
     
     let html = '<h3>Таблица соответствия (Виженер, прогрессивный ключ)</h3>';
     html += '<table class="matrix-table">';
-    // Строка исходного текста
     html += '<tr>';
-    for (let ch of plainText) {
-        html += `<td>${ch}</td>`;
-    }
-    html += '</tr>';
-    // Строка ключа
-    html += '<tr>';
-    for (let ch of keyStream) {
-        html += `<td>${ch}</td>`;
-    }
-    html += '</tr>';
-    // Строка результата
-    html += '<tr>';
-    for (let ch of cipherText) {
-        html += `<td>${ch}</td>`;
-    }
-    html += '</tr>';
-    html += '</table>';
+    for (let ch of plainText) html += `<td>${ch}</td>`;
+    html += '</tr><tr>';
+    for (let ch of keyStream) html += `<td>${ch}</td>`;
+    html += '</tr><tr>';
+    for (let ch of cipherText) html += `<td>${ch}</td>`;
+    html += '</tr></table>';
     html += '<p class="matrix-info">Верхний ряд — исходный текст, средний — прогрессивный ключ, нижний — результат</p>';
     matrixView.innerHTML = html;
 }
 
-// Основная функция обработки
+// Basic processing function (ignoring invalid characters)
 function process(mode) {
     const algorithm = getCurrentAlgorithm();
-    const key = keyInput.value.trim();
-    const text = inputText.value;
+    const rawKey = keyInput.value.trim();
+    const rawText = inputText.value;
 
-    // Проверка ключа
-    const keyError = validateKey(algorithm, key);
-    if (keyError) {
-        messageDiv.textContent = keyError;
+    if (!rawKey) {
+        messageDiv.textContent = 'Ключ не может быть пустым';
         messageDiv.className = 'error';
         matrixView.innerHTML = '';
         return;
     }
-
-    // Проверка текста
-    if (!text) {
+    if (!rawText) {
         messageDiv.textContent = 'Введите текст или загрузите файл';
         messageDiv.className = 'error';
         matrixView.innerHTML = '';
         return;
     }
-    const textError = validateText(algorithm, text);
-    if (textError) {
-        messageDiv.textContent = textError;
+
+    // We filter the key and text depending on the algorithm
+    let filteredKey, filteredText;
+    let keyFiltered = false, textFiltered = false;
+
+    if (algorithm === 'columnar') {
+        filteredKey = filterEnglish(rawKey);
+        filteredText = filterEnglish(rawText);
+        keyFiltered = filteredKey.length !== rawKey.length;
+        textFiltered = filteredText.length !== rawText.length;
+    } else {
+        filteredKey = filterRussian(rawKey);
+        filteredText = filterRussian(rawText);
+        keyFiltered = filteredKey.length !== rawKey.length;
+        textFiltered = filteredText.length !== rawText.length;
+    }
+
+    // Checking that characters remain after filtering
+    if (!filteredKey) {
+        messageDiv.textContent = algorithm === 'columnar' 
+            ? 'Ключ не содержит английских букв' 
+            : 'Ключ не содержит русских букв';
         messageDiv.className = 'error';
         matrixView.innerHTML = '';
         return;
+    }
+    if (!filteredText) {
+        messageDiv.textContent = algorithm === 'columnar' 
+            ? 'Текст не содержит английских букв' 
+            : 'Текст не содержит русских букв';
+        messageDiv.className = 'error';
+        matrixView.innerHTML = '';
+        return;
+    }
+
+    // Show a warning if characters were dropped
+    if (keyFiltered || textFiltered) {
+        let parts = [];
+        if (keyFiltered) parts.push('ключе');
+        if (textFiltered) parts.push('тексте');
+        messageDiv.textContent = `Внимание: в ${parts.join(' и ')} обнаружены недопустимые символы (пробелы, цифры, знаки и т.п.). Они были проигнорированы.`;
+        messageDiv.className = 'warning';
+    } else {
+        messageDiv.textContent = ''; 
     }
 
     try {
         let result = '';
         let matrixData = null;
         let keyStream = [];
-        let cleanText = '';
-        
+
         if (algorithm === 'columnar') {
-            const res = mode === 'encrypt' ? columnarEncrypt(text, key) : columnarDecrypt(text, key);
+            const res = mode === 'encrypt' 
+                ? columnarEncrypt(filteredText, filteredKey) 
+                : columnarDecrypt(filteredText, filteredKey);
             result = res.result;
             matrixData = res.matrixData;
-            if (!result) {
-                messageDiv.textContent = 'Внутренняя ошибка: не удалось обработать текст';
-                messageDiv.className = 'error';
-                outputText.value = '';
-                matrixView.innerHTML = '';
-                return;
-            }
             displayColumnarMatrix(matrixData);
         } else {
-            // Виженер
-            if (mode === 'encrypt') {
-                const res = vigenereEncrypt(text, key);
-                result = res.result;
-                keyStream = res.keyStream;
-                cleanText = filterRussian(text); // для отображения
-            } else {
-                const res = vigenereDecrypt(text, key);
-                result = res.result;
-                keyStream = res.keyStream;
-                cleanText = filterRussian(text); // для отображения
-            }
-            if (!result) {
-                messageDiv.textContent = 'Внутренняя ошибка: не удалось обработать текст';
-                messageDiv.className = 'error';
-                outputText.value = '';
-                matrixView.innerHTML = '';
-                return;
-            }
-            displayVigenereTable(cleanText, keyStream, result);
+            const res = mode === 'encrypt' 
+                ? vigenereEncrypt(filteredText, filteredKey) 
+                : vigenereDecrypt(filteredText, filteredKey);
+            result = res.result;
+            keyStream = res.keyStream;
+            displayVigenereTable(filteredText, keyStream, result);
         }
+
         outputText.value = result;
-        messageDiv.textContent = 'Операция выполнена успешно';
-        messageDiv.className = 'info';
+
+        // If there were no warnings, show success
+        if (!keyFiltered && !textFiltered) {
+            messageDiv.textContent = 'Операция выполнена успешно';
+            messageDiv.className = 'info';
+        }
     } catch (e) {
         messageDiv.textContent = 'Ошибка: ' + e.message;
         messageDiv.className = 'error';
@@ -394,19 +367,23 @@ for (const radio of algorithmRadios) {
     radio.addEventListener('change', () => matrixView.innerHTML = '');
 }
 
+// Clear buttons 
 const clearKeyBtn = document.getElementById('clear-key-btn');
 const clearTextBtn = document.getElementById('clear-text-btn');
 
-clearKeyBtn.addEventListener('click', () => {
-    keyInput.value = '';
-    messageDiv.textContent = '';
-    messageDiv.className = '';
-    matrixView.innerHTML = '';
-});
-
-clearTextBtn.addEventListener('click', () => {
-    inputText.value = '';
-    messageDiv.textContent = '';
-    messageDiv.className = '';
-    matrixView.innerHTML = '';
-});
+if (clearKeyBtn) {
+    clearKeyBtn.addEventListener('click', () => {
+        keyInput.value = '';
+        messageDiv.textContent = '';
+        messageDiv.className = '';
+        matrixView.innerHTML = '';
+    });
+}
+if (clearTextBtn) {
+    clearTextBtn.addEventListener('click', () => {
+        inputText.value = '';
+        messageDiv.textContent = '';
+        messageDiv.className = '';
+        matrixView.innerHTML = '';
+    });
+}
